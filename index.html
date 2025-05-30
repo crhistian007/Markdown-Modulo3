@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Editor Markdown</title>
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+  <style>
+    /* Fijar toolbar según HU1 */
+    #toolbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+    }
+    #preview {
+      overflow-y: auto;
+      max-height: calc(100vh - 120px);
+    }
+    #editor {
+      margin-top: 56px; /* altura del toolbar */
+      max-height: calc(50vh - 56px);
+      overflow-y: auto;
+    }
+    @media (max-width: 576px) {
+      #toolbar { top: auto; bottom: 0; }
+      #editor { margin-top: 0; margin-bottom: 56px; }
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+  <!-- HU1: Toolbar fija -->
+  <nav id="toolbar" class="navbar navbar-expand bg-white border">
+    <div class="container-fluid">
+      <button id="btn-preview" class="btn btn-primary me-2">
+        Generar Vista Previa
+      </button>
+      <button id="btn-contrast" class="btn btn-secondary">
+        Contrastar Encabezados
+      </button>
+    </div>
+  </nav>
+
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Editor -->
+      <div id="editor" class="col-12 col-md-6 p-2">
+        <textarea id="markdown-input"
+                  class="form-control h-100"
+                  placeholder="Escribe aquí tu Markdown…"></textarea>
+      </div>
+      <!-- Preview -->
+      <div id="preview" class="col-12 col-md-6 p-2">
+        <!-- Aquí se inyecta el HTML generado -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Tu JS -->
+  <script src="main.js"></script>
+</body>
+</html>
