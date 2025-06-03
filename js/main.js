@@ -1,41 +1,41 @@
 // Referencias
-const input = document.getElementById('markdown-input');
-const preview = document.getElementById('preview');
-const btnPreview = document.getElementById('btn-preview');
-const btnContrast = document.getElementById('btn-contrast');
+const entrada = document.getElementById('markdown-input');
+const previsualizacion = document.getElementById('preview');
+const btnPrevisualizacion = document.getElementById('btn-preview');
+const btnContraste = document.getElementById('btn-contrast');
 
-let contrastOn = false;
+let ContrasteBool = false;
 
 // HU2: Generar Preview con RegEx
-function generatePreview() {
-  let text = input.value;
+function GeneradorPrevisualizacion() {
+  let texto = entrada.value;
 
   // Encabezados: ###, ##, #
-  text = text.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-  text = text.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-  text = text.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+  texto = texto.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  texto = texto.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  texto = texto.replace(/^# (.+)$/gm, '<h1>$1</h1>');
 
   // Listas simples (líneas que empiezan con "- ")
   // 1) Convertir cada línea "- ítem" en <li>ítem</li>
-  text = text.replace(/^- (.+)$/gm, '<li>$1</li>');
+  texto = texto.replace(/^- (.+)$/gm, '<li>$1</li>');
   // 2) Agrupar todas las <li>con un <ul>…</ul>
-  if (text.includes('<li>')) {
-    text = '<ul>' + text + '</ul>';
+  if (texto.includes('<li>')) {
+    texto = '<ul>' + texto + '</ul>';
   }
 
   // Párrafos restantes
-  text = text.replace(/^(?!<(h[1-3]|ul|li)).+$/gm,
+  texto = texto.replace(/^(?!<(h[1-3]|ul|li)).+$/gm,
     match => `<p>${match.trim()}</p>`
   );
 
-  preview.innerHTML = text;
+  previsualizacion.innerHTML = texto;
 }
 
 // HU3: Contrastar Encabezados
-function toggleContrast() {
-  const headings = preview.querySelectorAll('h1, h2, h3');
+function contraste() {
+  const headings = previsualizacion.querySelectorAll('h1, h2, h3');
   headings.forEach(h => {
-    if (!contrastOn) {
+    if (!ContrasteBool) {
       // aplica estilos inline simples
       h.style.background = '#ff0';
       h.style.color = '#a00';
@@ -47,19 +47,19 @@ function toggleContrast() {
       h.style.padding = '';
     }
   });
-  contrastOn = !contrastOn;
+  ContrasteBool = !ContrasteBool;
 }
 
 // Eventos
-btnPreview.addEventListener('click', generatePreview);
-btnContrast.addEventListener('click', toggleContrast);
+btnPrevisualizacion.addEventListener('click', GeneradorPrevisualizacion);
+btnContraste.addEventListener('click', contraste);
 
 // Scroll automático (HU1: que no exceda espacio)
-input.addEventListener('input', () => {
-  if (input.scrollHeight > input.clientHeight) {
-    input.scrollTop = input.scrollHeight;
+entrada.addEventListener('input', () => {
+  if (entrada.scrollHeight > entrada.clientHeight) {
+    entrada.scrollTop = entrada.scrollHeight;
   }
-  if (preview.scrollHeight > preview.clientHeight) {
-    preview.scrollTop = preview.scrollHeight;
+  if (previsualizacion.scrollHeight > previsualizacion.clientHeight) {
+    previsualizacion.scrollTop = previsualizacion.scrollHeight;
   }
 });
