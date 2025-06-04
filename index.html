@@ -1,66 +1,101 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Editor Markdown</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Editor Markdown Avanzado</title>
+
   <!-- Bootstrap CSS -->
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
     rel="stylesheet"
-  >
+  />
+
   <style>
-    /* Fijar toolbar según HU1 */
+    /* Barra de herramientas fija */
     #toolbar {
       position: fixed;
-      top: 0; left: 0; right: 0;
+      top: 0;
+      left: 0;
+      right: 0;
       z-index: 1000;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
     }
-    #preview {
-      overflow-y: auto;
-      max-height: calc(100vh - 120px);
-    }
+
+    /* Contenedores debajo de la toolbar */
     #editor {
-      margin-top: 56px; /* altura del toolbar */
+      margin-top: 56px;
       max-height: calc(50vh - 56px);
       overflow-y: auto;
     }
+    #preview {
+      max-height: calc(50vh - 56px);
+      overflow-y: auto;
+    }
+
+    /* Para pantallas pequeñas */
     @media (max-width: 576px) {
-      #toolbar { top: auto; bottom: 0; }
-      #editor { margin-top: 0; margin-bottom: 56px; }
+      #toolbar {
+        top: auto;
+        bottom: 0;
+      }
+      #editor {
+        margin-top: 0;
+        margin-bottom: 56px;
+      }
+      #preview {
+        max-height: calc(100vh - 56px);
+      }
+    }
+
+    /* Estilo para los bloques de código resaltados */
+    .highlight {
+      background: #f5f5f5;
+      padding: 8px;
+      border-radius: 4px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      display: block;
+      margin-bottom: 8px;
     }
   </style>
 </head>
 <body class="bg-light">
-
-  <!-- HU1: Toolbar fija -->
-  <nav id="toolbar" class="navbar navbar-expand bg-white border">
+  <!-- Barra de herramientas fija -->
+  <nav id="toolbar" class="navbar navbar-expand bg-white">
     <div class="container-fluid">
       <button id="btn-preview" class="btn btn-primary me-2">
         Generar Vista Previa
       </button>
-      <button id="btn-contrast" class="btn btn-secondary">
+      <button id="btn-contrast" class="btn btn-secondary me-2">
         Contrastar Encabezados
+      </button>
+      <button id="btn-format" class="btn btn-warning">
+        Aplicar Formato
       </button>
     </div>
   </nav>
 
   <div class="container-fluid">
     <div class="row">
-      <!-- Editor -->
+      <!-- Editor Markdown -->
       <div id="editor" class="col-12 col-md-6 p-2">
-        <textarea id="markdown-input"
-                  class="form-control h-100"
-                  placeholder="Escribe aquí tu Markdown…"></textarea>
+        <textarea
+          id="markdown-input"
+          class="form-control h-100"
+          placeholder="Escribe aquí tu Markdown…"
+        ></textarea>
       </div>
-      <!-- Preview -->
-      <div id="preview" class="col-12 col-md-6 p-2">
-        <!-- Aquí se inyecta el HTML generado -->
+
+      <!-- Vista Previa -->
+      <div id="preview" class="col-12 col-md-6 p-2 bg-white border">
+        <!-- Aquí se inyectará el HTML generado -->
       </div>
     </div>
   </div>
 
-  <!-- Tu JS -->
+  <!-- Script JS -->
   <script src="js/main.js"></script>
 </body>
 </html>
