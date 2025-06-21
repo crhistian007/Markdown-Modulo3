@@ -1,188 +1,166 @@
-// Referencias al DOM (elementos de la interfaz)
-const editor = document.getElementById('markdown-input');
-const vistaPrevia = document.getElementById('preview');
-const botonVistaPrevia = document.getElementById('btn-preview');
-const botonContraste = document.getElementById('btn-contrast');
-const botonFormato = document.getElementById('btn-format');
+// 1. Referencias al DOM
+const editor      = document.getElementById('markdown-input');
+const vista       = document.getElementById('preview');
+const btnPreview  = document.getElementById('btn-preview');
+const btnClear    = document.getElementById('btn-clear');
+const btnFormat   = document.getElementById('btn-format');
+const btnContrast = document.getElementById('btn-contrast');
+const cntWords    = document.getElementById('word-count');
+const cntChars    = document.getElementById('char-count');
 
-let contrasteActivo = false;
+let contraste = false;
+let fmtState  = 0;
 
-let estadoFormato = 0;
+// 2. Helpers de regex
 
-
-/**
- * HOF que aplica una transformación al texto seleccionado en el editor.
- * Recibe un callback que toma el texto actual y devuelve el nuevo texto.
- * @param {function(string): string} callback 
- */
-function aplicarASeleccion(callback) {
-  const inicio = editor.selectionStart;
-  const fin = editor.selectionEnd;
-  const textoCompleto = editor.value;
-  const seleccionado = textoCompleto.slice(inicio, fin);
-
-  const transformado = callback(seleccionado);
-
-
-  editor.value = textoCompleto.slice(0, inicio) + transformado + textoCompleto.slice(fin);
-
-  editor.selectionStart = inicio;
-  editor.selectionEnd = inicio + transformado.length;
-}
-
-/**
- * HOF que aplica un reemplazo de líneas según una regex.
- * @param {string} cadena 
- * @param {RegExp} regex 
- * @param {function(...any): string} cb 
- */
-function transformarLineas(cadena, regex, cb) {
-  return cadena.replace(regex, cb);
-}
-
-/**
-
- * @param {string} cadena 
- * @returns {string}
- */
-function escaparHtml(cadena) {
-  return cadena
+// Escapa HTML básico
+function escaparHtml(txt) {
+  return txt
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }
 
-
-function alternarFormato() {
-  aplicarASeleccion(texto => {
-    if (estadoFormato === 0) {
-    
-      estadoFormato = 1;
-      return `**${texto}**`;
-    } else if (estadoFormato === 1) {
-
-      estadoFormato = 2;
-
-      const sinNegrita = texto.replace(/^\*\*(.*)\*\*$/, '$1');
-      return `*${sinNegrita}*`;
-    } else {
-
-      estadoFormato = 0;
- 
-      const sinFormato = texto.replace(/^\*{1,2}(.*)\*{1,2}$/, '$1');
-      return sinFormato;
-    }
-  });
-}
-
-
-
-function resaltarBloquesCodigo(cadena) {
-
-  return cadena.replace(/```([\s\S]*?)```/g, (coincidencia, codigo) => {
-  
-    const escapado = escaparHtml(codigo);
-
-    return `<pre><code class="highlight">${escapado}</code></pre>`;
-  });
-}
-
-
-
-function transformarListasNumeradas(cadena) {
-
-  cadena = transformarLineas(
-    cadena,
-    /^(\d+)\.\s+(.+)$/gm,
-    (m, numero, elemento) => `<li data-order="${numero}">${elemento}</li>`
+// Detecta y resalta bloques de código ```…```
+function parseCodeBlocks(text) {
+  return text.replace(/```([\s\S]*?)```/g, (_, code) =>
+    `<pre class="highlight">${escaparHtml(code)}</pre>`
   );
-
-
-  if (/data-order=/.test(cadena)) {
-    cadena = `<ol>${cadena}</ol>`;
-  }
-
-  return cadena;
 }
 
-
-
-function generarVistaPrevia() {
-  let texto = editor.value;
-
-
-  texto = resaltarBloquesCodigo(texto);
-
-
-  texto = transformarListasNumeradas(texto);
-
-
-  texto = texto.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
-  texto = texto.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
-  texto = texto.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
-
-
-  texto = transformarLineas(texto, /^-\s+(.+)$/gm, (m, elemento) => `<li>${elemento}</li>`);
-  if (/^<li>/.test(texto)) {
-    texto = `<ul>${texto}</ul>`;
-  }
-
-
-  texto = texto.replace(
-    /^(?!<(h[1-3]|ul|ol|li|pre)).+$/gm,
-    linea => `<p>${linea.trim()}</p>`
-  );
-
-
-  vistaPrevia.innerHTML = texto;
-}
-
-
-
-function alternarContraste() {
-  const encabezados = vistaPrevia.querySelectorAll('h1, h2, h3');
-  encabezados.forEach(h => {
-    if (!contrasteActivo) {
-      h.style.background = '#ff0'; 
-      h.style.color = '#a00';      
-      h.style.padding = '4px';     
-    } else {
-    
-      h.style.background = '';
-      h.style.color = '';
-      h.style.padding = '';
+// Encabezados # a ######
+function parseHeaders(text) {
+  return text.replace(
+    /^(#{1,6})\s*(.+)$/gm,
+    (_, hashes, content) => {
+      const level = hashes.length;
+      return `<h${level}>${content.trim()}</h${level}>`;
     }
-  });
-  contrasteActivo = !contrasteActivo;
+  );
 }
 
+// Listas ordenadas y desordenadas
+function parseLists(text) {
+  // items de lista
+  let t = text.replace(
+    /^(\s*)([-*]|\d+\.)\s+(.+)$/gm,
+    (_, indent, marker, content) => {
+      const tag = /\d+\./.test(marker) ? 'ol' : 'ul';
+      return `${indent}<li data-list="${tag}">${content}</li>`;
+    }
+  );
+  // agrupa <li data-list="ul">…</li> contiguos en <ul>...</ul>
+  t = t.replace(
+    /(?:<li data-list="ul">[\s\S]*?<\/li>)+/g,
+    block => '<ul>' +
+      block
+        .replace(/<li data-list="ul">/g, '<li>')
+        .replace(/<\/li>/g, '</li>') +
+      '</ul>'
+  );
+  // hace igual para ol
+  t = t.replace(
+    /(?:<li data-list="ol">[\s\S]*?<\/li>)+/g,
+    block => '<ol>' +
+      block
+        .replace(/<li data-list="ol">/g, '<li>')
+        .replace(/<\/li>/g, '</li>') +
+      '</ol>'
+  );
+  return t;
+}
 
-window.addEventListener('DOMContentLoaded', () => {
+// Negrita y cursiva
+function parseStyles(text) {
+  return text
+    // negrita **
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // cursiva *
+    .replace(/\*(.+?)\*/g, '<em>$1</em>');
+}
 
-  generarVistaPrevia();
-});
+// Párrafos: envuelve líneas que no son tags HTML
+function parseParagraphs(text) {
+  return text.replace(
+    /^(?!<(?:h[1-6]|ul|ol|li|pre|blockquote|p)[\s>])(.+)$/gm,
+    '<p>$1</p>'
+  );
+}
 
+// 3. Generar vista previa aplicando todas las reglas
+function renderMarkdown() {
+  let md = editor.value;
+  md = escaparHtml(md);
+  md = parseCodeBlocks(md);
+  md = parseHeaders(md);
+  md = parseLists(md);
+  md = parseStyles(md);
+  md = parseParagraphs(md);
+  vista.innerHTML = md;
+}
 
+// 4. Formateo de selección (bold/italic ciclado)
+function applySelection(fn) {
+  const start = editor.selectionStart;
+  const end   = editor.selectionEnd;
+  const txt   = editor.value;
+  const sel   = txt.slice(start, end);
+  const mod   = fn(sel);
+  editor.value =
+    txt.slice(0, start) + mod + txt.slice(end);
+  editor.setSelectionRange(start, start + mod.length);
+  processInput();
+}
+function toggleFormat() {
+  const marks = ['**','__','*','_'];
+  const m = marks[fmtState % marks.length];
+  applySelection(s => m + s + m);
+  fmtState++;
+}
 
+// 5. Contadores
+function updateCounters() {
+  const t = editor.value.trim();
+  cntChars.textContent = `${editor.value.length} caracteres`;
+  cntWords.textContent = `${t ? t.split(/\s+/).length : 0} palabras`;
+}
 
-botonVistaPrevia.addEventListener('click', () => {
-  try {
-    generarVistaPrevia();
-  } catch (err) {
-    console.error('Error al procesar Markdown:', err);
-    alert('Ocurrió un error al procesar el Markdown.');
-  }
-});
+// 6. Limpieza y contraste
+function clearEditor() {
+  editor.value = '';
+  vista.innerHTML = '';
+  fmtState = 0;
+  contraste = false;
+  updateCounters();
+}
+function toggleContrast() {
+  contraste = !contraste;
+  vista.classList.toggle('text-dark', contraste);
+  vista.classList.toggle('text-light', !contraste);
+}
 
-botonContraste.addEventListener('click', alternarContraste);
-
-botonFormato.addEventListener('click', alternarFormato);
+// 7. Orquestación HU1: preview en input, HU2: limpiar, HU3: contadores
+function processInput() {
+  renderMarkdown();
+  updateCounters();
+}
 
 editor.addEventListener('input', () => {
-  if (editor.scrollHeight > editor.clientHeight) {
+  // auto-scroll
+  if (editor.scrollHeight > editor.clientHeight)
     editor.scrollTop = editor.scrollHeight;
-  }
-  if (vistaPrevia.scrollHeight > vistaPrevia.clientHeight) {
-    vistaPrevia.scrollTop = vistaPrevia.scrollHeight;
-  }
+  if (vista.scrollHeight > vista.clientHeight)
+    vista.scrollTop = vista.scrollHeight;
+  processInput();
 });
+btnPreview.addEventListener('click', processInput);
+btnClear.addEventListener('click', clearEditor);
+btnFormat.addEventListener('click', toggleFormat);
+btnContrast.addEventListener('click', toggleContrast);
+
+// 8. Init
+window.addEventListener('DOMContentLoaded', () => {
+  processInput();
+});
+
+
