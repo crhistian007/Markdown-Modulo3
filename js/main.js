@@ -1,4 +1,4 @@
-// 1. Referencias al DOM
+
 const editor      = document.getElementById('markdown-input');
 const vista       = document.getElementById('preview');
 const btnPreview  = document.getElementById('btn-preview');
@@ -11,9 +11,7 @@ const cntChars    = document.getElementById('char-count');
 let contraste = false;
 let fmtState  = 0;
 
-// 2. Helpers de regex
 
-// Escapa HTML básico
 function escaparHtml(txt) {
   return txt
     .replace(/&/g, '&amp;')
@@ -21,14 +19,14 @@ function escaparHtml(txt) {
     .replace(/>/g, '&gt;');
 }
 
-// Detecta y resalta bloques de código ```…```
+
 function parseCodeBlocks(text) {
   return text.replace(/```([\s\S]*?)```/g, (_, code) =>
     `<pre class="highlight">${escaparHtml(code)}</pre>`
   );
 }
 
-// Encabezados # a ######
+
 function parseHeaders(text) {
   return text.replace(
     /^(#{1,6})\s*(.+)$/gm,
@@ -39,9 +37,9 @@ function parseHeaders(text) {
   );
 }
 
-// Listas ordenadas y desordenadas
+
 function parseLists(text) {
-  // items de lista
+
   let t = text.replace(
     /^(\s*)([-*]|\d+\.)\s+(.+)$/gm,
     (_, indent, marker, content) => {
@@ -49,7 +47,7 @@ function parseLists(text) {
       return `${indent}<li data-list="${tag}">${content}</li>`;
     }
   );
-  // agrupa <li data-list="ul">…</li> contiguos en <ul>...</ul>
+
   t = t.replace(
     /(?:<li data-list="ul">[\s\S]*?<\/li>)+/g,
     block => '<ul>' +
@@ -58,7 +56,7 @@ function parseLists(text) {
         .replace(/<\/li>/g, '</li>') +
       '</ul>'
   );
-  // hace igual para ol
+
   t = t.replace(
     /(?:<li data-list="ol">[\s\S]*?<\/li>)+/g,
     block => '<ol>' +
@@ -70,16 +68,15 @@ function parseLists(text) {
   return t;
 }
 
-// Negrita y cursiva
+
 function parseStyles(text) {
   return text
-    // negrita **
+
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    // cursiva *
+
     .replace(/\*(.+?)\*/g, '<em>$1</em>');
 }
 
-// Párrafos: envuelve líneas que no son tags HTML
 function parseParagraphs(text) {
   return text.replace(
     /^(?!<(?:h[1-6]|ul|ol|li|pre|blockquote|p)[\s>])(.+)$/gm,
@@ -87,7 +84,7 @@ function parseParagraphs(text) {
   );
 }
 
-// 3. Generar vista previa aplicando todas las reglas
+
 function renderMarkdown() {
   let md = editor.value;
   md = escaparHtml(md);
@@ -99,7 +96,7 @@ function renderMarkdown() {
   vista.innerHTML = md;
 }
 
-// 4. Formateo de selección (bold/italic ciclado)
+
 function applySelection(fn) {
   const start = editor.selectionStart;
   const end   = editor.selectionEnd;
@@ -118,14 +115,14 @@ function toggleFormat() {
   fmtState++;
 }
 
-// 5. Contadores
+
 function updateCounters() {
   const t = editor.value.trim();
   cntChars.textContent = `${editor.value.length} caracteres`;
   cntWords.textContent = `${t ? t.split(/\s+/).length : 0} palabras`;
 }
 
-// 6. Limpieza y contraste
+
 function clearEditor() {
   editor.value = '';
   vista.innerHTML = '';
@@ -139,14 +136,14 @@ function toggleContrast() {
   vista.classList.toggle('text-light', !contraste);
 }
 
-// 7. Orquestación HU1: preview en input, HU2: limpiar, HU3: contadores
+
 function processInput() {
   renderMarkdown();
   updateCounters();
 }
 
 editor.addEventListener('input', () => {
-  // auto-scroll
+
   if (editor.scrollHeight > editor.clientHeight)
     editor.scrollTop = editor.scrollHeight;
   if (vista.scrollHeight > vista.clientHeight)
@@ -158,7 +155,7 @@ btnClear.addEventListener('click', clearEditor);
 btnFormat.addEventListener('click', toggleFormat);
 btnContrast.addEventListener('click', toggleContrast);
 
-// 8. Init
+
 window.addEventListener('DOMContentLoaded', () => {
   processInput();
 });
